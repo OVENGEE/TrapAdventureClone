@@ -68,10 +68,17 @@ public class PlayerMovement : MonoBehaviour
 
     private bool isGrounded()
     {
-        if(Physics2D.OverlapBox(groundCheckPos.position, groundCheckSize, 0, groundLayer))
+        float extraHeight = 0.05f;
+        RaycastHit2D[] hits = Physics2D.BoxCastAll(groundCheckPos.position, groundCheckSize, 0f, Vector2.down, extraHeight, groundLayer);
+
+        foreach (RaycastHit2D hit in hits)
         {
-            return true;
+            if (hit.collider != null && hit.normal.y > 0.9f)
+            {
+                return true;
+            }
         }
+
         return false;
     }
 

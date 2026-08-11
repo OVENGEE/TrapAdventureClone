@@ -314,7 +314,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   rb: {fileID: 694196141651222885}
   moveSpeed: 5
-  jumpPower: 10
+  jumpPower: 11.3
   groundCheckPos: {fileID: 7565782488381949531}
   groundCheckSize: {x: 0.5, y: 0.05}
   groundLayer:
