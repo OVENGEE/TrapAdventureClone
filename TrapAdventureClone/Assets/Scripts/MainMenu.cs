@@ -8,11 +8,13 @@ public class MainMenu : MonoBehaviour
 {
     public void PlayGame()
     {
+        AudioFeedback.PlayButton();
         SceneManager.LoadSceneAsync(1);
     }
 
     public void QuitGame()
     {
+        AudioFeedback.PlayButton();
         Application.Quit();
     }
 }

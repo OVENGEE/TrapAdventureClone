@@ -35,7 +35,7 @@ public class GameOverManager : MonoBehaviour
     private void Start()
     {
         // Find the timer
-        timer = FindObjectOfType<PersistentCountdown>();
+        timer = FindFirstObjectByType<PersistentCountdown>();
 
         if (timer == null)
         {
@@ -63,11 +63,17 @@ public class GameOverManager : MonoBehaviour
 
     private void OnTimerComplete()
     {
+        TriggerGameOver(gameOverTitle, gameOverMessage);
+    }
+
+    public void TriggerGameOver(string title, string message)
+    {
         if (isGameOver) return;
 
+        gameOverTitle = title;
+        gameOverMessage = message;
         isGameOver = true;
-
-        // Start coroutine to show modal with delay
+        AudioFeedback.PlayGameOver();
         StartCoroutine(ShowGameOverWithDelay());
     }
 
@@ -141,9 +147,11 @@ public class GameOverManager : MonoBehaviour
     public void RestartGame()
     {
         Debug.Log("Restarting Game - Loading Level 1...");
+        AudioFeedback.PlayButton();
 
         // Reset time scale
         Time.timeScale = 1f;
+        PlayerHealth.ResetSavedHealth();
 
         // Reset timer
         if (timer != null)
@@ -159,22 +167,34 @@ public class GameOverManager : MonoBehaviour
         isGameOver = false;
 
        
-        // Load Level 1 - Option 2: By scene index
-        
-            SceneManager.LoadScene(1);
+        if (!string.IsNullOrWhiteSpace(restartSceneName))
+        {
+            SceneManager.LoadScene(restartSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(restartSceneIndex);
+        }
         
     }
 
     public void QuitGame()
     {
         Debug.Log("Quitting to Main Menu...");
+        AudioFeedback.PlayButton();
 
         // Reset time scale
         Time.timeScale = 1f;
+        PlayerHealth.ResetSavedHealth();
 
-        // Load Main Menu
-        
-        SceneManager.LoadScene(0);
+        if (!string.IsNullOrWhiteSpace(mainMenuSceneName))
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+        else
+        {
+            SceneManager.LoadScene(0);
+        }
        
     }
 
@@ -182,6 +202,7 @@ public class GameOverManager : MonoBehaviour
     public void QuitApplication()
     {
         Debug.Log("Quitting Application...");
+        AudioFeedback.PlayButton();
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -193,7 +214,7 @@ public class GameOverManager : MonoBehaviour
     // Public method to manually trigger game over (for testing)
     public void TriggerGameOver()
     {
-        OnTimerComplete();
+        TriggerGameOver(gameOverTitle, gameOverMessage);
     }
 
     // Public method to check if game is over

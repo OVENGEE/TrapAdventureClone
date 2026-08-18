@@ -20,8 +20,12 @@ public class PersistentCountdown : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true; // Enabled by default for debugging
 
+    [Header("Audio Feedback")]
+    [SerializeField] private float warningThreshold = 10f;
+
     private float currentTime;
     private bool isRunning = false;
+    private int lastWarningSecond = int.MaxValue;
     private static PersistentCountdown instance;
     private static bool isInitialized = false;
     private static float savedTime = 0f; // Store time between scenes
@@ -117,9 +121,25 @@ public class PersistentCountdown : MonoBehaviour
             savedTime = 0f;
             OnTimerCompleteInternal();
         }
+        else
+        {
+            PlayTimerWarningIfNeeded();
+        }
 
         UpdateTextDisplay();
         OnTimerUpdateInternal(currentTime);
+    }
+
+    private void PlayTimerWarningIfNeeded()
+    {
+        if (currentTime > warningThreshold) return;
+
+        int currentSecond = Mathf.CeilToInt(currentTime);
+        if (currentSecond != lastWarningSecond)
+        {
+            lastWarningSecond = currentSecond;
+            AudioFeedback.PlayTimerWarning();
+        }
     }
 
     private void UpdateTextDisplay()
@@ -173,6 +193,7 @@ public class PersistentCountdown : MonoBehaviour
     {
         currentTime = maxValue;
         savedTime = currentTime;
+        lastWarningSecond = int.MaxValue;
         UpdateTextDisplay();
         if (showDebugLogs)
             Debug.Log($"Timer reset to {maxValue} seconds");
@@ -184,6 +205,7 @@ public class PersistentCountdown : MonoBehaviour
         timerWasRunning = false;
         currentTime = maxValue;
         savedTime = currentTime;
+        lastWarningSecond = int.MaxValue;
         UpdateTextDisplay();
         if (showDebugLogs)
             Debug.Log("Timer stopped and reset");

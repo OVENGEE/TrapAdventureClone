@@ -9,6 +9,7 @@ public class Trap : MonoBehaviour
     {
         if(collision.gameObject.CompareTag("Player"))
         {
+            AudioFeedback.PlayTrapHit();
             HandlePlayerBounce(collision.gameObject);
         }
     }

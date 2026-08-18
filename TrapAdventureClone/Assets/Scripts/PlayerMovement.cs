@@ -57,6 +57,7 @@ public class PlayerMovement : MonoBehaviour
             {
                 //hold down jump button full height
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x , jumpPower);
+                AudioFeedback.PlayJump();
             }
             else if(context.canceled)
             {

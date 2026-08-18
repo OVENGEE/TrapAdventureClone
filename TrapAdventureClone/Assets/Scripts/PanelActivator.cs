@@ -11,6 +11,7 @@ public class PanelActivator : MonoBehaviour
         {
             if (panelToEnable != null)
             {
+                AudioFeedback.PlayOverallWin();
                 panelToEnable.SetActive(true);
                 Time.timeScale = 0f;
             }
@@ -19,12 +20,15 @@ public class PanelActivator : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        AudioFeedback.PlayButton();
         Time.timeScale = 1f;
         SceneManager.LoadScene("Main Menu");
     }
 
     public void GoToLevel1()
     {
+        AudioFeedback.PlayButton();
+        PlayerHealth.ResetSavedHealth();
         Time.timeScale = 1f;
         SceneManager.LoadScene("Level 1");
     }

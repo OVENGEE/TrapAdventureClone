@@ -29,8 +29,11 @@ public class PlayerHealth : MonoBehaviour
             currentHealth = savedHealth;
         }
 
-        healthUI.SetMaxHearts(maxHealth);
-        healthUI.UpdateHearts(currentHealth);
+        if (healthUI != null)
+        {
+            healthUI.SetMaxHearts(maxHealth);
+            healthUI.UpdateHearts(currentHealth);
+        }
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
@@ -43,7 +46,10 @@ public class PlayerHealth : MonoBehaviour
         if(trap && trap.damage > 0)
         {
             TakeDamage(trap.damage);
-            ResetToSpawn();
+            if (currentHealth > 0)
+            {
+                ResetToSpawn();
+            }
         }
     }
 
@@ -51,14 +57,26 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth -= damage;
         savedHealth = currentHealth;
-        healthUI.UpdateHearts(currentHealth);
+        AudioFeedback.PlayDamage();
+
+        if (healthUI != null)
+        {
+            healthUI.UpdateHearts(currentHealth);
+        }
 
         //flash red
         StartCoroutine(FlashRed());
 
         if(currentHealth <= 0)
         {
-            //player dead! -- call game over, animation, etc
+            currentHealth = 0;
+            savedHealth = currentHealth;
+
+            GameOverManager gameOverManager = FindFirstObjectByType<GameOverManager>();
+            if (gameOverManager != null)
+            {
+                gameOverManager.TriggerGameOver("GAME OVER", "You ran out of lives!");
+            }
         }
     }
 
@@ -75,8 +93,16 @@ public class PlayerHealth : MonoBehaviour
 
     private IEnumerator FlashRed()
     {
+        if (spriteRenderer == null) yield break;
+
         spriteRenderer.color = Color.red;
         yield return new WaitForSeconds(0.2f);
         spriteRenderer.color = Color.white;
+    }
+
+    public static void ResetSavedHealth()
+    {
+        savedHealth = 0;
+        hasSavedHealth = false;
     }
 }

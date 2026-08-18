@@ -9,6 +9,7 @@ public class SpikeTrap : MonoBehaviour
     {
         if(collision.gameObject.tag == "Player" )
         {
+            AudioFeedback.PlayTrapReveal();
             anim.SetTrigger(RAISE_PARAM);
         }
     }
