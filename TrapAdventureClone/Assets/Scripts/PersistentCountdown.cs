@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using System;
 using TMPro;
+using UnityEngine.SceneManagement; // Add this for scene management
 
 public class PersistentCountdown : MonoBehaviour
 {
@@ -13,23 +14,24 @@ public class PersistentCountdown : MonoBehaviour
     [SerializeField] private bool startOnAwake = true;
     [SerializeField] private string timeFormat = @"mm\:ss";
 
+    [Header("Scene Reset Settings")]
+    [SerializeField] private string resetSceneName = "Level 1"; // Scene to reset timer on
+    [SerializeField] private bool resetOnSceneLoad = true;
+
     [Header("Events")]
     public UnityEvent onTimerComplete;
     public UnityEvent<float> onTimerUpdate;
 
     [Header("Debug")]
-    [SerializeField] private bool showDebugLogs = true; // Enabled by default for debugging
-
-    [Header("Audio Feedback")]
-    [SerializeField] private float warningThreshold = 10f;
+    [SerializeField] private bool showDebugLogs = true;
 
     private float currentTime;
     private bool isRunning = false;
-    private int lastWarningSecond = int.MaxValue;
     private static PersistentCountdown instance;
     private static bool isInitialized = false;
-    private static float savedTime = 0f; // Store time between scenes
+    private static float savedTime = 0f;
     private static bool timerWasRunning = false;
+    private static string lastSceneName = ""; // Track last scene for reset detection
 
     public float CurrentTime => currentTime;
     public float MaxValue => maxValue;
@@ -60,6 +62,9 @@ public class PersistentCountdown : MonoBehaviour
             instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log($"Setting DontDestroyOnLoad for {gameObject.name}");
+
+            // Subscribe to scene loaded event
+            SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         // Get TextMeshPro component
@@ -80,18 +85,65 @@ public class PersistentCountdown : MonoBehaviour
             Debug.Log("First time initialization");
             InitializeTimer();
             isInitialized = true;
+            lastSceneName = SceneManager.GetActiveScene().name;
         }
         else
         {
-            // Restore saved state
-            Debug.Log($"Restoring timer state - Time: {savedTime}, Running: {timerWasRunning}");
-            currentTime = savedTime;
-            isRunning = timerWasRunning;
-            UpdateTextDisplay();
+            // Check if we need to reset for Level 1
+            string currentScene = SceneManager.GetActiveScene().name;
+            bool shouldReset = resetOnSceneLoad &&
+                              currentScene == resetSceneName &&
+                              lastSceneName != resetSceneName;
 
-            if (showDebugLogs)
-                Debug.Log($"Timer restored with {currentTime} seconds remaining");
+            if (shouldReset)
+            {
+                Debug.Log($"Scene {resetSceneName} loaded - Resetting timer");
+                ResetTimerState();
+                lastSceneName = currentScene;
+            }
+            else
+            {
+                // Restore saved state
+                Debug.Log($"Restoring timer state - Time: {savedTime}, Running: {timerWasRunning}");
+                currentTime = savedTime;
+                isRunning = timerWasRunning;
+                UpdateTextDisplay();
+
+                if (showDebugLogs)
+                    Debug.Log($"Timer restored with {currentTime} seconds remaining");
+            }
         }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // This handles scene reloads when the object persists
+        string currentScene = scene.name;
+
+        bool shouldReset = resetOnSceneLoad &&
+                          currentScene == resetSceneName &&
+                          lastSceneName != resetSceneName;
+
+        if (shouldReset)
+        {
+            Debug.Log($"Scene {resetSceneName} loaded via OnSceneLoaded - Resetting timer");
+            ResetTimerState();
+        }
+
+        lastSceneName = currentScene;
+    }
+
+    private void ResetTimerState()
+    {
+        // Reset all timer state
+        currentTime = maxValue;
+        savedTime = maxValue;
+        isRunning = startOnAwake;
+        timerWasRunning = startOnAwake;
+        UpdateTextDisplay();
+
+        if (showDebugLogs)
+            Debug.Log($"Timer reset for Level 1 scene reload");
     }
 
     private void InitializeTimer()
@@ -111,7 +163,7 @@ public class PersistentCountdown : MonoBehaviour
         if (!isRunning) return;
 
         currentTime -= Time.deltaTime;
-        savedTime = currentTime; // Save current time
+        savedTime = currentTime;
 
         if (currentTime <= 0f)
         {
@@ -121,25 +173,9 @@ public class PersistentCountdown : MonoBehaviour
             savedTime = 0f;
             OnTimerCompleteInternal();
         }
-        else
-        {
-            PlayTimerWarningIfNeeded();
-        }
 
         UpdateTextDisplay();
         OnTimerUpdateInternal(currentTime);
-    }
-
-    private void PlayTimerWarningIfNeeded()
-    {
-        if (currentTime > warningThreshold) return;
-
-        int currentSecond = Mathf.CeilToInt(currentTime);
-        if (currentSecond != lastWarningSecond)
-        {
-            lastWarningSecond = currentSecond;
-            AudioFeedback.PlayTimerWarning();
-        }
     }
 
     private void UpdateTextDisplay()
@@ -193,7 +229,6 @@ public class PersistentCountdown : MonoBehaviour
     {
         currentTime = maxValue;
         savedTime = currentTime;
-        lastWarningSecond = int.MaxValue;
         UpdateTextDisplay();
         if (showDebugLogs)
             Debug.Log($"Timer reset to {maxValue} seconds");
@@ -205,7 +240,6 @@ public class PersistentCountdown : MonoBehaviour
         timerWasRunning = false;
         currentTime = maxValue;
         savedTime = currentTime;
-        lastWarningSecond = int.MaxValue;
         UpdateTextDisplay();
         if (showDebugLogs)
             Debug.Log("Timer stopped and reset");
@@ -265,6 +299,9 @@ public class PersistentCountdown : MonoBehaviour
 
     private void OnDestroy()
     {
+        // Unsubscribe from scene events
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
         // Save state before destruction
         if (instance == this)
         {
