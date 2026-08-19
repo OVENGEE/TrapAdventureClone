@@ -3,7 +3,7 @@ using UnityEngine;
 public class BackgroundMusicPlayer : MonoBehaviour
 {
     private const string BackgroundMusicResourcePath = "background_music_on_patrol";
-    private const float DefaultVolume = 0.35f;
+    private const float DefaultVolume = 0.22f;
 
     private static BackgroundMusicPlayer instance;
 
